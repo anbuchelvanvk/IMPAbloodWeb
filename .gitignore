@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.env
+
+
+.next
+
+# Firebase admin key (local only)
+blooddonationweb-26dde-firebase-adminsdk-fbsvc-613f6555a4.json
+
+.env.*
+*firebase-adminsdk*.json
+service-account*.json
+.secrets/
+
+# Local/experimental agent instruction artifacts
+.agents/
+agents.local.md
+AGENTS.local.md
+# next-agents-md
+.next-docs/
+
+.antigravitycli/

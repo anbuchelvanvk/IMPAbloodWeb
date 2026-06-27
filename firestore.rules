@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    function isRequestParticipant() {
+      return isAuthenticated() && (
+        resource.data.requesterId == request.auth.uid ||
+        resource.data.donorId == request.auth.uid
+      );
+    }
+
+    function isFoodDonationReader() {
+      return isAuthenticated() && (
+        resource.data.donorId == request.auth.uid ||
+        resource.data.requesterId == request.auth.uid
+      );
+    }
+
+    function isFoodRequestReader() {
+      return isAuthenticated() && (
+        resource.data.requesterId == request.auth.uid ||
+        resource.data.donorId == request.auth.uid
+      );
+    }
+
+    function isChatParticipant() {
+      return isAuthenticated() && (
+        resource.data.donorId == request.auth.uid ||
+        resource.data.requesterId == request.auth.uid
+      );
+    }
+
+    function isChatParticipantOnCreate() {
+      return isAuthenticated() && (
+        request.resource.data.donorId == request.auth.uid ||
+        request.resource.data.requesterId == request.auth.uid
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+
+      allow create: if isOwner(userId)
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.role == 'user'
+        && (!request.resource.data.keys().hasAny(['isAdmin']) || request.resource.data.isAdmin == false);
+
+      allow update: if (
+        isOwner(userId)
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.isAdmin == resource.data.isAdmin
+      ) || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    match /requests/{requestId} {
+      allow read: if isAdmin() || isRequestParticipant();
+
+      allow create: if isAuthenticated()
+        && request.resource.data.requesterId == request.auth.uid
+        && request.resource.data.status in ['Pending', 'Pending Verification']
+        && request.resource.data.isVerified == false;
+
+      allow update, delete: if isAdmin();
+    }
+
+    match /donationHistory/{historyId} {
+      allow read: if isAdmin()
+        || (isAuthenticated() && (
+          resource.data.donorId == request.auth.uid ||
+          resource.data.requesterId == request.auth.uid
+        ));
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /foodDonations/{donationId} {
+      allow read: if isAdmin() || isFoodDonationReader();
+
+      allow create: if isAuthenticated()
+        && request.resource.data.donorId == request.auth.uid
+        && request.resource.data.status == 'Available';
+
+      allow update, delete: if isAdmin()
+        || (isAuthenticated() && resource.data.donorId == request.auth.uid);
+    }
+
+    match /foodRequests/{requestId} {
+      allow read: if isAdmin() || isFoodRequestReader();
+
+      allow create: if isAuthenticated()
+        && request.resource.data.requesterId == request.auth.uid
+        && request.resource.data.status == 'Open';
+
+      allow update, delete: if isAdmin()
+        || (isAuthenticated() && resource.data.requesterId == request.auth.uid);
+    }
+
+    match /requestOtps/{requestId} {
+      allow read, write: if false;
+    }
+
+    match /chats/{chatId} {
+      allow read: if isAdmin() || isChatParticipant();
+
+      allow create: if isAdmin() || isChatParticipantOnCreate();
+
+      allow update, delete: if isAdmin() || isChatParticipant();
+
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated() && (
+          isAdmin() ||
+          get(/databases/$(database)/documents/chats/$(chatId)).data.donorId == request.auth.uid ||
+          get(/databases/$(database)/documents/chats/$(chatId)).data.requesterId == request.auth.uid
+        );
+      }
+    }
+  }
+}

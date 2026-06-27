@@ -1,0 +1,41 @@
+{
+  "name": "impabloodweb",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run --config vitest.config.mjs",
+    "test:e2e:emulator": "npm run test:e2e:emulator:strict",
+    "test:e2e:emulator:smoke": "npm run build && firebase emulators:exec --only auth,firestore \"node tests/e2e/emulator-e2e.smoke.mjs\"",
+    "test:e2e:emulator:strict": "npm run build && firebase emulators:exec --only auth,firestore \"node tests/e2e/emulator-e2e.strict.mjs\""
+  },
+  "dependencies": {
+    "@vladmandic/face-api": "^1.7.15",
+    "firebase": "^12.13.0",
+    "firebase-admin": "^13.5.0",
+    "framer-motion": "^12.40.0",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^1.16.0",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-hot-toast": "^2.6.0",
+    "react-webcam": "^7.2.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.12",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.37.0",
+    "eslint-config-next": "^16.2.6",
+    "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "postcss": "^8.5.15",
+    "uuid": "^11.1.1"
+  }
+}
