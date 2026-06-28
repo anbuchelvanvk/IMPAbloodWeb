@@ -110,6 +110,28 @@ h1, h2, h3, h4, h5, h6 {
   color: white;
 }
 
+.btn-warning-outline {
+  background: transparent;
+  color: var(--warning);
+  border: 2px solid var(--warning);
+}
+
+.btn-warning-outline:hover {
+  background: var(--warning);
+  color: white;
+}
+
+.btn-success-outline {
+  background: transparent;
+  color: var(--success);
+  border: 2px solid var(--success);
+}
+
+.btn-success-outline:hover {
+  background: var(--success);
+  color: white;
+}
+
 .btn-secondary {
   background: var(--secondary);
   color: white;

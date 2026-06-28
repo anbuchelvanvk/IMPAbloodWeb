@@ -526,7 +526,11 @@ const AdminDashboard = () => {
                   <td style={{ padding: '1rem', fontWeight: 500 }}>{u.name} {u.isAdmin && <span className="badge badge-primary ml-2">Admin</span>}</td>
                   <td style={{ padding: '1rem' }}>{u.contact}</td>
                   <td style={{ padding: '1rem' }}>
-                    <span className="badge badge-secondary">{u.bloodGroup}</span>
+                    <div className="flex gap-2 flex-wrap">
+                      {u.isBloodDonor !== false && <span className="badge badge-secondary">{u.bloodGroup || 'Blood'}</span>}
+                      {u.isFoodDonor && <span className="badge" style={{background: 'var(--warning)', color: 'white'}}>Food</span>}
+                      {u.isEyeDonor && <span className="badge" style={{background: 'var(--success)', color: 'white'}}>Eye</span>}
+                    </div>
                   </td>
                   <td style={{ padding: '1rem' }}>
                     <div className="flex gap-2">
@@ -666,16 +670,27 @@ const AdminDashboard = () => {
                   </div>
                 )}
                 <h4 style={{ margin: 0, textAlign: 'center' }}>{selectedUser.name}</h4>
-                <p className="text-light text-center">{selectedUser.bloodGroup} Donor</p>
+                <div className="flex flex-col gap-1 items-center mt-2">
+                  {selectedUser.isBloodDonor !== false && <span className="badge badge-secondary text-xs">{selectedUser.bloodGroup} Donor</span>}
+                  {selectedUser.isFoodDonor && <span className="badge text-xs" style={{background: 'var(--warning)', color: 'white'}}>Food Donor</span>}
+                  {selectedUser.isEyeDonor && <span className="badge text-xs" style={{background: 'var(--success)', color: 'white'}}>Eye Donor</span>}
+                </div>
               </div>
               
               <div style={{ background: 'var(--background)', padding: '1.5rem', borderRadius: '8px', flex: 1 }}>
                 <div className="grid grid-cols-2 gap-4">
                   <p style={{ margin: 0 }}><strong>Contact:</strong> {selectedUser.contact}</p>
                   <p style={{ margin: 0 }}><strong>Email:</strong> {selectedUser.email || 'N/A'}</p>
+                  <p style={{ margin: 0 }}><strong>Age:</strong> {selectedUser.age || 'N/A'}</p>
                   <p style={{ margin: 0 }}><strong>State:</strong> {selectedUser.state || 'N/A'}</p>
                   <p style={{ margin: 0 }}><strong>District:</strong> {selectedUser.district || 'N/A'}</p>
                   <p style={{ margin: 0 }}><strong>Joined:</strong> {new Date(selectedUser.createdAt).toLocaleDateString()}</p>
+                  {selectedUser.isEyeDonor && (
+                    <>
+                      <p style={{ margin: 0 }}><strong>Guardian:</strong> {selectedUser.guardianName || 'N/A'}</p>
+                      <p style={{ margin: 0 }}><strong>Guardian Contact:</strong> {selectedUser.guardianContact || 'N/A'}</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

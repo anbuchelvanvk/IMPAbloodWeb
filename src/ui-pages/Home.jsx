@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Droplet, Heart, Activity, Search, Lock, Users, Shield, 
   Clock, ArrowRight, ChevronDown, ChevronUp, Star, Building, 
-  CheckCircle, Bell, Info, MessageSquare 
+  CheckCircle, Bell, Info, MessageSquare, Eye
 } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import { SOUTH_INDIAN_STATES } from '../utils/locations';
@@ -82,8 +82,8 @@ const Home = () => {
           <div className="flex items-center gap-3" style={{ flex: '1 1 auto', minWidth: '300px' }}>
             <Bell size={24} style={{ marginRight: '0.5rem', flexShrink: 0, animation: 'pulse 2s infinite' }} />
             <div style={{ textAlign: 'left' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Emergency Blood Requirement?</h3>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>We instantly notify verified donors in your nearby area.</p>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Emergency Blood or Food Requirement?</h3>
+              <p style={{ margin: 0, opacity: 0.9, fontSize: '0.9rem' }}>We instantly connect you with verified donors and volunteers in your area.</p>
             </div>
           </div>
           <Link to="/create-request" style={{ background: 'white', color: 'var(--primary)', fontWeight: 'bold', border: 'none', padding: '0.6rem 1.5rem', borderRadius: '8px', textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block' }}>
@@ -101,12 +101,12 @@ const Home = () => {
             transition={{ duration: 0.5 }}
           >
             <h1 style={{ fontSize: '3.5rem', marginBottom: '1.5rem', lineHeight: 1.1 }}>
-              Donate Blood, <br/>
+              Donate Blood, Food & Eyes. <br/>
               <span className="text-primary">Save Lives.</span>
             </h1>
             <p className="text-light" style={{ fontSize: '1.25rem', marginBottom: '2rem', lineHeight: 1.6 }}>
-              Your blood can give a precious smile to someone's face. 
-              Join our community of lifesavers today. Every drop counts.
+              Your contribution can bring hope and a precious smile to someone's face. 
+              Join our community of lifesavers today. Every effort counts.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link to="/register" className="btn btn-primary">
@@ -136,9 +136,10 @@ const Home = () => {
       <section style={{ padding: '4rem 0', background: 'white', borderBottom: '1px solid rgba(0,0,0,0.05)', position: 'relative' }}>
         <div className="container" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3rem', textAlign: 'center' }}>
           {[
-            { icon: Users, count: "70+", label: "Registered Donors", color: "var(--secondary)" },
-            { icon: Heart, count: "50+", label: "Lives Helped", color: "var(--primary)" },
-            { icon: Activity, count: "60+", label: "Requests Completed", color: "var(--success)" }
+            { icon: Users, count: "70+", label: "Blood Donors", color: "var(--primary)" },
+            { icon: Heart, count: "50+", label: "Food Donors", color: "var(--warning)" },
+            { icon: Activity, count: "60+", label: "Eye Pledges", color: "var(--success)" },
+            { icon: Shield, count: "100+", label: "Lives Touched", color: "var(--secondary)" }
           ].map((stat, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} style={{ flex: '1 1 250px', maxWidth: '300px' }}>
               <div style={{ display: 'inline-flex', padding: '1.25rem', borderRadius: '50%', background: `${stat.color}15`, color: stat.color, marginBottom: '1rem' }}>
@@ -166,7 +167,7 @@ const Home = () => {
                 <div style={{ position: 'absolute', top: -5, right: -5, background: 'var(--primary)', color: 'white', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>1</div>
               </div>
               <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Register</h3>
-              <p className="text-light">Sign up with your details and become a verified part of our life-saving community.</p>
+              <p className="text-light">Sign up with your details and become a verified part of our life-saving community for blood, food, or eye donation.</p>
             </motion.div>
             
             <motion.div whileHover={{ y: -10 }} className="card text-center" style={{ background: 'white', border: '1px solid var(--border)' }}>
@@ -175,7 +176,7 @@ const Home = () => {
                 <div style={{ position: 'absolute', top: -5, right: -5, background: 'var(--secondary)', color: 'white', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>2</div>
               </div>
               <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Find & Get Notified</h3>
-              <p className="text-light">Check for blood requests or receive instant notifications when nearby patients need your blood group.</p>
+              <p className="text-light">Check for urgent requests or receive instant notifications when nearby people need your help.</p>
             </motion.div>
             
             <motion.div whileHover={{ y: -10 }} className="card text-center" style={{ background: 'white', border: '1px solid var(--border)' }}>
@@ -183,8 +184,8 @@ const Home = () => {
                 <Droplet size={40} style={{ color: 'var(--success)' }} />
                 <div style={{ position: 'absolute', top: -5, right: -5, background: 'var(--success)', color: 'white', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>3</div>
               </div>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Donate</h3>
-              <p className="text-light">Connect directly with patients and save lives with your generous donation.</p>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Donate & Pledge</h3>
+              <p className="text-light">Connect directly with beneficiaries, fulfill requests, or pledge your eyes for a noble cause.</p>
             </motion.div>
           </div>
         </div>
@@ -241,12 +242,50 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Our Services */}
+      <section style={{ padding: '5rem 0', background: 'var(--bg-color)' }}>
+        <div className="container">
+          <div className="text-center mb-10">
+            <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Our Dedicated Portals</h2>
+            <p className="text-light">Explore our specialized platforms for different types of contributions.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <Link to="/requests" className="card text-center" style={{ textDecoration: 'none', background: 'white', border: '1px solid var(--border)', transition: 'transform 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-10px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}>
+              <div style={{ background: 'rgba(230, 57, 70, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                <Droplet size={40} className="text-primary" />
+              </div>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text-dark)' }}>Blood Donation</h3>
+              <p className="text-light mb-4">View urgent blood requests, connect with patients, and save lives instantly.</p>
+              <span className="btn btn-outline w-full">Go to Blood Portal</span>
+            </Link>
+            
+            <Link to="/food-donation" className="card text-center" style={{ textDecoration: 'none', background: 'white', border: '1px solid var(--border)', transition: 'transform 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-10px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}>
+              <div style={{ background: 'rgba(245, 158, 11, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                <Heart size={40} className="text-warning" />
+              </div>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text-dark)' }}>Food Donation</h3>
+              <p className="text-light mb-4">Share excess food, support orphanages, or sponsor a meal for the needy.</p>
+              <span className="btn btn-warning-outline w-full">Go to Food Portal</span>
+            </Link>
+
+            <Link to="/eye-donation" className="card text-center" style={{ textDecoration: 'none', background: 'white', border: '1px solid var(--border)', transition: 'transform 0.3s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-10px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}>
+              <div style={{ background: 'rgba(42, 157, 143, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                <Eye size={40} className="text-success" />
+              </div>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text-dark)' }}>Eye Donation</h3>
+              <p className="text-light mb-4">Pledge your eyes to give the gift of sight. Leave a lasting legacy behind.</p>
+              <span className="btn btn-success-outline w-full">Go to Eye Portal</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Public Donors Section */}
       <section style={{ padding: '5rem 0', background: 'white' }}>
         <div className="container">
           <div className="text-center mb-8">
-            <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Available Donors Directory</h2>
-            <p className="text-light">Contact our voluntary donors directly for urgent blood requirements.</p>
+            <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Available Blood Donors Directory</h2>
+            <p className="text-light">Contact our voluntary blood donors directly for urgent requirements.</p>
           </div>
           
           <div className="mb-8" style={{ background: 'var(--bg-color)', padding: '2rem', borderRadius: '16px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)', border: '1px solid var(--border)' }}>

@@ -8,6 +8,7 @@ import { auth } from '../firebase';
 import { MapPin, User, Calendar, Droplet, AlertCircle, Share2, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SOUTH_INDIAN_STATES } from '../utils/locations';
+import toast from 'react-hot-toast';
 
 const BloodRequests = () => {
   const { user } = useAuth();
@@ -18,6 +19,11 @@ const BloodRequests = () => {
   const [nextCursor, setNextCursor] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [isExhausted, setIsExhausted] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Filters
   const [filterBloodGroup, setFilterBloodGroup] = useState('');
@@ -30,6 +36,36 @@ const BloodRequests = () => {
   const [loadingProofId, setLoadingProofId] = useState('');
   const [toastMsg, setToastMsg] = useState(null);
   const [daysLeftToDonate, setDaysLeftToDonate] = useState(0);
+
+  // Enrollment State
+  const [showEnroll, setShowEnroll] = useState(false);
+  const [enrollData, setEnrollData] = useState({
+    bloodGroup: '',
+    shareContact: false
+  });
+  const [enrollLoading, setEnrollLoading] = useState(false);
+
+  const handleEnroll = async (e) => {
+    e.preventDefault();
+    if (!enrollData.bloodGroup) return toast.error("Please select a blood group");
+    
+    setEnrollLoading(true);
+    try {
+      const updated = await firebaseService.updateUserProfile(user.id, {
+        isBloodDonor: true,
+        bloodGroup: enrollData.bloodGroup,
+        shareContact: enrollData.shareContact
+      });
+      if (updated) {
+        updateUser(updated);
+        toast.success("Successfully enrolled as a Blood Donor!");
+      }
+    } catch(err) {
+      toast.error("Failed to enroll");
+    } finally {
+      setEnrollLoading(false);
+    }
+  };
 
   const sortRequests = (data) => {
     const list = [...data];
@@ -263,7 +299,89 @@ const BloodRequests = () => {
         </div>
       </div>
 
-      {loading ? (
+      {mounted && user && !user.isBloodDonor && (
+        <div className="card mb-8" style={{ background: 'rgba(230, 57, 70, 0.05)', border: '1px solid rgba(230, 57, 70, 0.2)' }}>
+          <h3 className="mb-4 text-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Droplet size={24} /> Not a Blood Donor Yet?
+          </h3>
+          <p className="text-light mb-4">You are currently logged in but haven't enrolled as a blood donor. Enroll now to start saving lives and get your official donor card!</p>
+          
+          <div className="mb-4">
+            <label className="flex items-center gap-2 cursor-pointer" style={{ fontWeight: 600 }}>
+              <input 
+                type="radio" 
+                checked={showEnroll} 
+                onChange={() => setShowEnroll(!showEnroll)} 
+                onClick={() => setShowEnroll(!showEnroll)}
+                style={{ width: '1.25rem', height: '1.25rem', accentColor: 'var(--primary)' }} 
+              />
+              Yes, I want to enroll as a blood donor!
+            </label>
+          </div>
+
+          <AnimatePresence>
+            {showEnroll && (
+              <motion.form 
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: 'auto' }} 
+                exit={{ opacity: 0, height: 0 }}
+                onSubmit={handleEnroll}
+                style={{ overflow: 'hidden' }}
+              >
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block mb-2 text-sm font-bold text-gray-700">Blood Group *</label>
+                    <select 
+                      className="form-input w-full"
+                      value={enrollData.bloodGroup}
+                      onChange={e => setEnrollData({...enrollData, bloodGroup: e.target.value})}
+                      required
+                    >
+                      <option value="">Select Blood Group</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-bold text-gray-700">Privacy Settings</label>
+                    <div className="flex items-center gap-3 p-3 rounded" style={{ background: 'white', border: '1px solid var(--border)', height: '52px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="shareContact"
+                        checked={enrollData.shareContact}
+                        onChange={e => setEnrollData({...enrollData, shareContact: e.target.checked})}
+                        style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--primary)' }}
+                      />
+                      <label htmlFor="shareContact" style={{ cursor: 'pointer', margin: 0, marginLeft: '8px' }}>Make my contact number public</label>
+                    </div>
+                  </div>
+                </div>
+                <button type="submit" className="btn btn-primary mt-6" disabled={enrollLoading}>
+                  {enrollLoading ? 'Enrolling...' : 'Enroll Now'}
+                </button>
+              </motion.form>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {mounted && user && user.isBloodDonor && (
+        <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)', marginBottom: '2rem' }}>
+          <p className="text-light text-sm" style={{ margin: 0 }}>
+            <AlertCircle size={16} style={{ display: 'inline', marginRight: '0.5rem', marginBottom: '2px' }} />
+            Note: If you wish to withdraw your pledge and revoke your membership, please head to your <Link to="/profile" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Profile Page</Link> and click the "Revoke" button next to your Blood Donor Card.
+          </p>
+        </div>
+      )}
+
+      <div style={mounted && user && !user.isBloodDonor ? { filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.6 } : {}}>
+        {loading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border)' }}>
@@ -437,7 +555,8 @@ const BloodRequests = () => {
             </div>
           )}
         </>
-      )}
+        )}
+      </div>
 
       {selectedProof?.proofImage && (
         <div

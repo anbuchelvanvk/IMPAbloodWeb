@@ -33,7 +33,7 @@ const Login = () => {
         sessionStorage.removeItem('pendingGoogleUser');
         sessionStorage.setItem('pendingProfileUser', JSON.stringify(userData));
         toast('Please complete your profile details to continue', { icon: 'ℹ️', duration: 5000 });
-        navigate('/register');
+        navigate('/register', { state: { googleUser: userData } });
       } else {
         navigate('/requests');
       }
@@ -56,7 +56,7 @@ const Login = () => {
         sessionStorage.setItem('pendingGoogleUser', JSON.stringify(userData));
         sessionStorage.setItem('pendingProfileUser', JSON.stringify(userData));
         toast('Please complete your profile details to finish registration', { icon: 'ℹ️', duration: 5000 });
-        navigate('/register');
+        navigate('/register', { state: { googleUser: userData } });
       } else {
         toast.success(`Welcome back, ${userData.name}!`);
         navigate('/requests');

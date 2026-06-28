@@ -39,7 +39,7 @@ const Contact = () => {
               </div>
               <div>
                 <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem' }}>Email Us</h4>
-                <p className="text-light" style={{ margin: 0, fontWeight: 500 }}>dummy@impa.com</p>
+                <p className="text-light" style={{ margin: 0, fontWeight: 500 }}>impa.tvm@gmail.com</p>
                 <p className="text-light" style={{ margin: 0, fontSize: '0.85rem' }}>We usually reply within 24 hours.</p>
               </div>
             </div>

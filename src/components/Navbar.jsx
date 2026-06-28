@@ -10,7 +10,7 @@ import { firebaseService } from '../services/firebaseService';
 import { auth } from '../firebase';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, pendingUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = Boolean(user && user.isAdmin === true);
@@ -101,7 +101,8 @@ const Navbar = () => {
           <Link to="/" className="nav-link" onClick={closeMenu}>Home</Link>
           <Link to="/about" className="nav-link" onClick={closeMenu}>About Us</Link>
           <Link to="/requests" className="nav-link" onClick={closeMenu}>Blood Requests</Link>
-          {/* <Link to="/food-donation" className="nav-link" onClick={closeMenu}>Food Donation</Link> */}
+          <Link to="/food-donation" className="nav-link" onClick={closeMenu}>Food Donation</Link>
+          <Link to="/eye-donation" className="nav-link" onClick={closeMenu}>Eye Donation</Link>
           <Link to="/contact" className="nav-link" onClick={closeMenu}>Contact</Link>
           {isAdmin && (
             <Link to="/admin" className="nav-link text-warning" style={{ fontWeight: 'bold' }} onClick={closeMenu}>Admin Portal</Link>
@@ -138,6 +139,10 @@ const Navbar = () => {
                 </button>
               </div>
             </>
+          ) : pendingUser ? (
+            <div className="flex gap-4">
+              <button onClick={handleLogout} className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}>Cancel Registration</button>
+            </div>
           ) : (
             <div className="flex gap-4">
               <Link to="/login" className="btn btn-outline" style={{ padding: '0.5rem 1rem' }} onClick={closeMenu}>Login</Link>

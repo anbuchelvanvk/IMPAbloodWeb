@@ -51,7 +51,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center gap-3 text-light" style={{ color: '#adb5bd' }}>
                 <Mail size={18} />
-                <a href="mailto:dummy@impa.com" style={{ color: 'inherit' }}>dummy@impa.com</a>
+                <a href="mailto:impa.tvm@gmail.com" style={{ color: 'inherit' }}>impa.tvm@gmail.com</a>
               </div>
 
               <div className="flex items-center gap-3 text-light" style={{ color: '#adb5bd' }}>
@@ -71,7 +71,7 @@ const Footer = () => {
           </p>
           <p style={{ fontWeight: '500', color: 'white', marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem' }}>
             <span className="tooltip-wrapper">
-              <a href="https://x.com/itsanbuchelvan" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Anbuchelvan</a>
+              <a href="https://linkedin.com/in/anbuchelvanvk" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Anbuchelvan</a>
               <span className="tooltip-content">Website Developer</span>
             </span>
           </p>

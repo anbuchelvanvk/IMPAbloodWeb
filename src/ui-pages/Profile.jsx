@@ -185,7 +185,50 @@ const Profile = () => {
     }
   };
 
-  const downloadDonorCard = () => {
+  const revokeDonation = async (type) => {
+    if (!window.confirm(`Are you sure you want to revoke your ${type} donor status? This will permanently remove your donor card for this service.`)) return;
+    
+    try {
+      setLoading(true);
+      const updates = {};
+      if (type === 'blood') {
+        updates.isBloodDonor = false;
+        updates.bloodDonorId = null;
+        updates.bloodGroup = null;
+        updates.lastDonationDate = null;
+        updates.nextEligibleDate = null;
+      }
+      if (type === 'food') {
+        updates.isFoodDonor = false;
+        updates.foodDonorId = null;
+        updates.foodType = null;
+        updates.foodFrequency = null;
+        updates.trustName = null;
+        updates.fssaiNumber = null;
+      }
+      if (type === 'eye') {
+        updates.isEyeDonor = false;
+        updates.eyeDonorId = null;
+        updates.eyeDonationConsent = false;
+        updates.guardianName = null;
+        updates.guardianContact = null;
+        updates.doctorName = null;
+        updates.doctorNumber = null;
+      }
+      
+      const updated = await firebaseService.updateUserProfile(user.id, updates);
+      if (updated) {
+        updateUser(updated);
+        toast.success(`Your ${type} donation pledge has been revoked.`);
+      }
+    } catch (err) {
+      toast.error("Failed to revoke donation. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadCard = (type) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
@@ -201,18 +244,29 @@ const Profile = () => {
       ctx.textAlign = 'right';
       ctx.fillText(user.name, canvas.width - 50, canvas.height - 110); 
       
+      let donorId = '';
+      if (type === 'blood') donorId = user.bloodDonorId;
+      if (type === 'food') donorId = user.foodDonorId;
+      if (type === 'eye') donorId = user.eyeDonorId;
+      
+      if (donorId) {
+        ctx.font = 'bold 24px Arial';
+        ctx.fillStyle = type === 'eye' ? '#10b981' : type === 'food' ? '#f59e0b' : '#e63946';
+        ctx.fillText(`ID: ${donorId}`, canvas.width - 50, canvas.height - 70); 
+      }
+      
       const pdf = new jsPDF({
         orientation: img.width > img.height ? 'landscape' : 'portrait',
         unit: 'px',
         format: [img.width, img.height]
       });
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, img.width, img.height);
-      pdf.save('Donor_Card.pdf');
+      pdf.save(`${type.charAt(0).toUpperCase() + type.slice(1)}_Donor_Card.pdf`);
     };
-    img.src = '/donor_card_template.png';
+    img.src = `/${type} donarcard.png`;
   };
 
-  const shareDonorCard = () => {
+  const shareCard = (type) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
@@ -227,14 +281,25 @@ const Profile = () => {
       ctx.textAlign = 'right';
       ctx.fillText(user.name, canvas.width - 50, canvas.height - 110); 
       
+      let donorId = '';
+      if (type === 'blood') donorId = user.bloodDonorId;
+      if (type === 'food') donorId = user.foodDonorId;
+      if (type === 'eye') donorId = user.eyeDonorId;
+      
+      if (donorId) {
+        ctx.font = 'bold 24px Arial';
+        ctx.fillStyle = type === 'eye' ? '#10b981' : type === 'food' ? '#f59e0b' : '#e63946';
+        ctx.fillText(`ID: ${donorId}`, canvas.width - 50, canvas.height - 70); 
+      }
+      
       canvas.toBlob(async (blob) => {
-        const file = new File([blob], 'Donor_Card.png', { type: 'image/png' });
+        const file = new File([blob], `${type.charAt(0).toUpperCase() + type.slice(1)}_Donor_Card.png`, { type: 'image/png' });
         
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
-              title: 'My Donor Card',
-              text: "Got my donor card with IMPA, get yours now!",
+              title: `My ${type.charAt(0).toUpperCase() + type.slice(1)} Donor Card`,
+              text: `Got my ${type} donor card with IMPA, get yours now!`,
               files: [file]
             });
             toast.success("Shared successfully!");
@@ -248,7 +313,7 @@ const Profile = () => {
         }
       }, 'image/png');
     };
-    img.src = '/donor_card_template.png';
+    img.src = `/${type} donarcard.png`;
   };
 
   const downloadCertificate = (cert) => {
@@ -490,22 +555,71 @@ const Profile = () => {
 
             <h3 style={{ marginBottom: '1rem', borderBottom: '2px solid var(--border)', paddingBottom: '0.5rem' }}>Downloads</h3>
             
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
-              <div className="flex justify-between items-center flex-wrap gap-4">
-                <div>
-                  <h4 style={{ margin: 0 }}>My Donor Card</h4>
-                  <p className="text-light" style={{ margin: 0, fontSize: '0.9rem' }}>Official IMPA Blood Donor ID</p>
-                </div>
-                <div className="flex" style={{ gap: '1.5rem' }}>
-                  <button className="btn btn-outline" onClick={shareDonorCard} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Share2 size={18} /> Share
-                  </button>
-                  <button className="btn btn-primary" onClick={downloadDonorCard} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Download size={18} /> Download
-                  </button>
+            {user.isBloodDonor && (
+              <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '1.5rem', borderLeft: '4px solid var(--primary)' }}>
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <div>
+                    <h4 style={{ margin: 0, color: 'var(--primary-dark)' }}>Blood Donor Card</h4>
+                    <p className="text-light" style={{ margin: 0, fontSize: '0.9rem' }}>Official IMPA Blood Donor ID {user.bloodDonorId && `(${user.bloodDonorId})`}</p>
+                  </div>
+                  <div className="flex" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-outline" onClick={() => revokeDonation('blood')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderColor: 'var(--error)', color: 'var(--error)' }} onMouseOver={(e) => { e.currentTarget.style.background = 'var(--error)'; e.currentTarget.style.color = 'white'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--error)'; }}>
+                      Revoke
+                    </button>
+                    <button className="btn btn-outline" onClick={() => shareCard('blood')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Share2 size={18} /> Share
+                    </button>
+                    <button className="btn btn-primary" onClick={() => downloadCard('blood')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Download size={18} /> Download
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+            
+            {user.isFoodDonor && (
+              <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '1.5rem', borderLeft: '4px solid var(--warning)' }}>
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <div>
+                    <h4 style={{ margin: 0, color: 'var(--warning-dark, #b45309)' }}>Food Donor Card</h4>
+                    <p className="text-light" style={{ margin: 0, fontSize: '0.9rem' }}>Official IMPA Food Donor ID {user.foodDonorId && `(${user.foodDonorId})`}</p>
+                  </div>
+                  <div className="flex" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-outline" onClick={() => revokeDonation('food')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderColor: 'var(--error)', color: 'var(--error)' }} onMouseOver={(e) => { e.currentTarget.style.background = 'var(--error)'; e.currentTarget.style.color = 'white'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--error)'; }}>
+                      Revoke
+                    </button>
+                    <button className="btn btn-outline" onClick={() => shareCard('food')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Share2 size={18} /> Share
+                    </button>
+                    <button className="btn btn-primary" style={{ background: 'var(--warning)', borderColor: 'var(--warning)' }} onClick={() => downloadCard('food')}>
+                      <div className="flex items-center gap-2"><Download size={18} /> Download</div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {user.isEyeDonor && (
+              <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '1.5rem', borderLeft: '4px solid var(--success)' }}>
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <div>
+                    <h4 style={{ margin: 0, color: 'var(--success)' }}>Eye Donor Pledge Card</h4>
+                    <p className="text-light" style={{ margin: 0, fontSize: '0.9rem' }}>Official IMPA Eye Donor Pledge {user.eyeDonorId && `(${user.eyeDonorId})`}</p>
+                  </div>
+                  <div className="flex" style={{ gap: '1rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-outline" onClick={() => revokeDonation('eye')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderColor: 'var(--error)', color: 'var(--error)' }} onMouseOver={(e) => { e.currentTarget.style.background = 'var(--error)'; e.currentTarget.style.color = 'white'; }} onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--error)'; }}>
+                      Revoke
+                    </button>
+                    <button className="btn btn-outline" onClick={() => shareCard('eye')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Share2 size={18} /> Share
+                    </button>
+                    <button className="btn" style={{ background: 'var(--success)', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => downloadCard('eye')}>
+                      <Download size={18} /> Download Card
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <h4 style={{ marginBottom: '1rem' }}>My Certificates</h4>
             <div className="grid gap-4">

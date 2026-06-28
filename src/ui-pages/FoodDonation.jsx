@@ -2,16 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { SOUTH_INDIAN_STATES } from '../utils/locations';
-import { Camera, Utensils, HeartHandshake, MapPin, IndianRupee, QrCode, Phone, User, Users, CheckCircle } from 'lucide-react';
+import { Camera, Utensils, HeartHandshake, MapPin, IndianRupee, QrCode, Phone, User, Users, CheckCircle, AlertCircle } from 'lucide-react';
 import { firebaseService } from '../services/firebaseService';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from '../lib/navigation';
+import { useNavigate, Link } from '../lib/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 const FoodDonation = () => {
   const MAX_PROOF_BASE64_LEN = 1_500_000;
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('donate'); // donate, request, money
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [previewImage, setPreviewImage] = useState(null);
   const [loading, setLoading] = useState(false);
   
@@ -31,6 +38,38 @@ const FoodDonation = () => {
     trustName: '',
     peopleCount: '',
   });
+
+  // Enrollment State
+  const [showEnroll, setShowEnroll] = useState(false);
+  const [enrollData, setEnrollData] = useState({
+    foodType: 'Veg',
+    foodFrequency: 'Occasional',
+    trustName: '',
+    fssaiNumber: ''
+  });
+  const [enrollLoading, setEnrollLoading] = useState(false);
+
+  const handleEnroll = async (e) => {
+    e.preventDefault();
+    setEnrollLoading(true);
+    try {
+      const updated = await firebaseService.updateUserProfile(user.id, {
+        isFoodDonor: true,
+        foodType: enrollData.foodType,
+        foodFrequency: enrollData.foodFrequency,
+        trustName: enrollData.trustName,
+        fssaiNumber: enrollData.fssaiNumber
+      });
+      if (updated) {
+        updateUser(updated);
+        toast.success("Successfully enrolled as a Food Donor!");
+      }
+    } catch(err) {
+      toast.error("Failed to enroll");
+    } finally {
+      setEnrollLoading(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -184,8 +223,106 @@ const FoodDonation = () => {
         </div>
       </div>
 
+      {mounted && user && !user.isFoodDonor && (
+        <div className="card mb-8" style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+          <h3 className="mb-4" style={{ color: 'var(--warning-dark, #b45309)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Utensils size={24} /> Not a Food Donor Yet?
+          </h3>
+          <p className="text-light mb-4">You are currently logged in but haven't enrolled as a food donor. Enroll now to easily manage your food donations and get your official donor card!</p>
+          
+          <div className="mb-4">
+            <label className="flex items-center gap-2 cursor-pointer" style={{ fontWeight: 600 }}>
+              <input 
+                type="radio" 
+                checked={showEnroll} 
+                onChange={() => setShowEnroll(!showEnroll)} 
+                onClick={() => setShowEnroll(!showEnroll)}
+                style={{ width: '1.25rem', height: '1.25rem', accentColor: 'var(--warning)' }} 
+              />
+              <span style={{ marginLeft: '8px' }}>Yes, I want to enroll as a food donor!</span>
+            </label>
+          </div>
+
+          <AnimatePresence>
+            {showEnroll && (
+              <motion.form 
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: 'auto' }} 
+                exit={{ opacity: 0, height: 0 }}
+                onSubmit={handleEnroll}
+                style={{ overflow: 'hidden' }}
+              >
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block mb-2 text-sm font-bold text-gray-700">Type of Food Usually Donated *</label>
+                    <select 
+                      className="form-input w-full"
+                      value={enrollData.foodType}
+                      onChange={e => setEnrollData({...enrollData, foodType: e.target.value})}
+                      required
+                    >
+                      <option value="Veg">Vegetarian</option>
+                      <option value="Non-Veg">Non-Vegetarian</option>
+                      <option value="Both">Both</option>
+                      <option value="Packaged">Packaged/Dry Goods</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-bold text-gray-700">Donation Frequency *</label>
+                    <select 
+                      className="form-input w-full"
+                      value={enrollData.foodFrequency}
+                      onChange={e => setEnrollData({...enrollData, foodFrequency: e.target.value})}
+                      required
+                    >
+                      <option value="Daily">Daily</option>
+                      <option value="Weekly">Weekly</option>
+                      <option value="Monthly">Monthly</option>
+                      <option value="Occasional">Occasional</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-bold text-gray-700">Organization / Trust Name (Optional)</label>
+                    <input 
+                      type="text" 
+                      className="form-input w-full"
+                      value={enrollData.trustName}
+                      onChange={e => setEnrollData({...enrollData, trustName: e.target.value})}
+                      placeholder="e.g. Helping Hands NGO"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm font-bold text-gray-700">FSSAI Number (Optional)</label>
+                    <input 
+                      type="text" 
+                      className="form-input w-full"
+                      value={enrollData.fssaiNumber}
+                      onChange={e => setEnrollData({...enrollData, fssaiNumber: e.target.value})}
+                      placeholder="For restaurants & caterers"
+                    />
+                  </div>
+                </div>
+                <button type="submit" className="btn mt-6" style={{ background: 'var(--warning)', borderColor: 'var(--warning)', color: 'white' }} disabled={enrollLoading}>
+                  {enrollLoading ? 'Enrolling...' : 'Enroll Now'}
+                </button>
+              </motion.form>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {mounted && user && user.isFoodDonor && (
+        <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--warning)', marginBottom: '2rem' }}>
+          <p className="text-light text-sm" style={{ margin: 0 }}>
+            <AlertCircle size={16} style={{ display: 'inline', marginRight: '0.5rem', marginBottom: '2px' }} />
+            Note: If you wish to withdraw your pledge and revoke your membership, please head to your <Link to="/profile" style={{ color: 'var(--warning-dark, #b45309)', textDecoration: 'underline' }}>Profile Page</Link> and click the "Revoke" button next to your Food Donor Card.
+          </p>
+        </div>
+      )}
+
       {/* PREVIEWS SECTION */}
-      {activeTab === 'donate' && donations.length > 0 && (
+      <div style={mounted && user && !user.isFoodDonor && activeTab === 'donate' ? { filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.6 } : {}}>
+        {activeTab === 'donate' && donations.length > 0 && (
         <div className="mb-10">
           <h3 className="mb-4 text-center">Available Food Donations</h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -222,6 +359,7 @@ const FoodDonation = () => {
           </div>
         </div>
       )}
+      </div>
 
       {activeTab === 'request' && requests.length > 0 && (
         <div className="mb-10">
@@ -269,8 +407,8 @@ const FoodDonation = () => {
       {/* FORM AREA */}
       <div className="card mx-auto" style={{ maxWidth: '700px' }}>
         
-        {/* DONATE FOOD TAB */}
-        {activeTab === 'donate' && (
+        <div style={mounted && user && !user.isFoodDonor && activeTab === 'donate' ? { filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none', opacity: 0.6 } : {}}>
+          {activeTab === 'donate' && (
           <form onSubmit={handleSubmit}>
             <h3 className="mb-6 text-center">Post a New Food Donation</h3>
             <div className="grid md:grid-cols-2 gap-4">
@@ -320,8 +458,9 @@ const FoodDonation = () => {
             <button type="submit" className="btn btn-primary w-full mt-4" disabled={loading}>
               {loading ? 'Posting...' : <><Utensils size={20} /> Post Food Donation</>}
             </button>
-          </form>
-        )}
+            </form>
+          )}
+        </div>
 
         {/* REQUEST FOOD TAB */}
         {activeTab === 'request' && (

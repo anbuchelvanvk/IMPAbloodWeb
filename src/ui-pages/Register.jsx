@@ -20,35 +20,22 @@ const generateCaptcha = () => {
 };
 
 const Register = () => {
-  const { register, loginWithGoogle, updateUser } = useAuth();
+  const { register, loginWithGoogle, updateUser, pendingUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const webcamRef = useRef(null);
   const captchaCanvasRef = useRef(null);
-  const profileUser = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return JSON.parse(window.sessionStorage.getItem('pendingProfileUser') || 'null');
-    } catch {
-      return null;
-    }
-  }, []);
-  const sessionGoogleUser = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return JSON.parse(window.sessionStorage.getItem('pendingGoogleUser') || 'null');
-    } catch {
-      return null;
-    }
-  }, []);
-  const googleUser = location.state?.googleUser || profileUser || sessionGoogleUser;
-  const isProfileCompletionMode = Boolean(profileUser || googleUser);
-  const seedUser = googleUser || profileUser || null;
+  
+  const isProfileCompletionMode = Boolean(pendingUser);
+  const seedUser = pendingUser;
   
   const [formData, setFormData] = useState({
     name: seedUser?.name || '',
     contact: seedUser?.contact || '',
     email: seedUser?.email || '',
+    isBloodDonor: seedUser?.isBloodDonor || false,
+    isFoodDonor: seedUser?.isFoodDonor || false,
+    isEyeDonor: seedUser?.isEyeDonor || false,
     bloodGroup: seedUser?.bloodGroup || '',
     state: seedUser?.state || '',
     district: seedUser?.district || '',
@@ -57,7 +44,16 @@ const Register = () => {
     captchaInput: '',
     shareContact: seedUser?.shareContact === true,
     hasDonatedBefore: 'no',
-    lastDonationDate: seedUser?.lastDonationDate ? String(seedUser.lastDonationDate).split('T')[0] : ''
+    lastDonationDate: seedUser?.lastDonationDate ? String(seedUser.lastDonationDate).split('T')[0] : '',
+    fssaiNumber: seedUser?.fssaiNumber || '',
+    trustName: seedUser?.trustName || '',
+    foodFrequency: seedUser?.foodFrequency || '',
+    foodType: seedUser?.foodType || '',
+    eyeDonationConsent: seedUser?.eyeDonationConsent || false,
+    familyInformed: seedUser?.familyInformed || false,
+    doctorName: seedUser?.doctorName || '',
+    doctorNumber: seedUser?.doctorNumber || '',
+    isRequestTrustee: false
   });
   
   const [captcha, setCaptcha] = useState(generateCaptcha());
@@ -80,19 +76,35 @@ const Register = () => {
   const isCompletionUi = hydrated && isProfileCompletionMode;
 
   useEffect(() => {
-    if (!googleUser) return;
+    if (!pendingUser) {
+      setFormData((prev) => ({
+        ...prev,
+        name: '',
+        email: '',
+        contact: '',
+        fssaiNumber: '',
+        trustName: '',
+        doctorName: '',
+        doctorNumber: ''
+      }));
+      setFaceVerified(false);
+      setVerificationStatus('idle');
+      return;
+    }
+    
     setFormData((prev) => {
-      const nextName = googleUser.name || prev.name;
-      const nextEmail = googleUser.email || prev.email;
+      const nextName = pendingUser.name || prev.name;
+      const nextEmail = pendingUser.email || prev.email;
       if (nextName === prev.name && nextEmail === prev.email) return prev;
       return { ...prev, name: nextName, email: nextEmail };
     });
-    if (googleUser.faceVerified === true) {
+    
+    if (pendingUser.faceVerified === true) {
       setFaceVerified(true);
       setVerificationStatus('verified');
     }
     setLoading(false);
-  }, [googleUser?.uid, googleUser?.name, googleUser?.email, googleUser?.faceVerified]);
+  }, [pendingUser]);
 
   useEffect(() => {
     if (!isCompletionUi || !seedUser) return;
@@ -101,11 +113,19 @@ const Register = () => {
       name: seedUser.name || prev.name,
       contact: seedUser.contact || prev.contact,
       email: seedUser.email || prev.email,
+      isBloodDonor: seedUser.isBloodDonor ?? prev.isBloodDonor,
+      isFoodDonor: seedUser.isFoodDonor ?? prev.isFoodDonor,
+      isEyeDonor: seedUser.isEyeDonor ?? prev.isEyeDonor,
       bloodGroup: seedUser.bloodGroup || prev.bloodGroup,
       state: seedUser.state || prev.state,
       district: seedUser.district || prev.district,
       shareContact: seedUser.shareContact === true ? true : prev.shareContact,
-      lastDonationDate: seedUser.lastDonationDate ? String(seedUser.lastDonationDate).split('T')[0] : prev.lastDonationDate
+      lastDonationDate: seedUser.lastDonationDate ? String(seedUser.lastDonationDate).split('T')[0] : prev.lastDonationDate,
+      fssaiNumber: seedUser.fssaiNumber || prev.fssaiNumber,
+      trustName: seedUser.trustName || prev.trustName,
+      eyeDonationConsent: seedUser.eyeDonationConsent ?? prev.eyeDonationConsent,
+      doctorName: seedUser.doctorName || prev.doctorName,
+      doctorNumber: seedUser.doctorNumber || prev.doctorNumber
     }));
     if (seedUser.faceVerified === true) {
       setFaceVerified(true);
@@ -137,11 +157,19 @@ const Register = () => {
           name: latest.name || prev.name,
           contact: latest.contact || prev.contact,
           email: latest.email || prev.email,
+          isBloodDonor: latest.isBloodDonor ?? prev.isBloodDonor,
+          isFoodDonor: latest.isFoodDonor ?? prev.isFoodDonor,
+          isEyeDonor: latest.isEyeDonor ?? prev.isEyeDonor,
           bloodGroup: latest.bloodGroup || prev.bloodGroup,
           state: latest.state || prev.state,
           district: latest.district || prev.district,
           shareContact: latest.shareContact === true ? true : prev.shareContact,
-          lastDonationDate: latest.lastDonationDate ? String(latest.lastDonationDate).split('T')[0] : prev.lastDonationDate
+          lastDonationDate: latest.lastDonationDate ? String(latest.lastDonationDate).split('T')[0] : prev.lastDonationDate,
+          fssaiNumber: latest.fssaiNumber || prev.fssaiNumber,
+          trustName: latest.trustName || prev.trustName,
+          eyeDonationConsent: latest.eyeDonationConsent ?? prev.eyeDonationConsent,
+          doctorName: latest.doctorName || prev.doctorName,
+          doctorNumber: latest.doctorNumber || prev.doctorNumber
         }));
         if (latest.faceVerified === true) {
           setFaceVerified(true);
@@ -254,8 +282,28 @@ const Register = () => {
   };
 
   const handleChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setFormData({ ...formData, [e.target.name]: value });
+    const { name, value, type, checked } = e.target;
+    if (type === 'checkbox') {
+      if (name === 'isRequestTrustee' && checked) {
+        setFormData(prev => ({
+          ...prev,
+          isRequestTrustee: true,
+          isBloodDonor: false,
+          isFoodDonor: false,
+          isEyeDonor: false
+        }));
+      } else if (['isBloodDonor', 'isFoodDonor', 'isEyeDonor'].includes(name) && checked) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: true,
+          isRequestTrustee: false
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: checked }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleStateChange = (e) => {
@@ -324,6 +372,16 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
+    if (!formData.isBloodDonor && !formData.isFoodDonor && !formData.isEyeDonor && !formData.isRequestTrustee) {
+      setError('Please select at least one role (Donor type or Request Trustee).');
+      return;
+    }
+
+    if (formData.isEyeDonor && !formData.eyeDonationConsent) {
+      setError('Please provide your consent for eye donation.');
+      return;
+    }
+
     if (!isProfileCompletionMode) {
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match!');
@@ -364,35 +422,41 @@ const Register = () => {
         nextEligibleDate = eligible.toISOString();
       }
 
+      const payloadData = {
+        name: formData.name,
+        contact: formData.contact,
+        email: formData.email,
+        isBloodDonor: formData.isBloodDonor,
+        isFoodDonor: formData.isFoodDonor,
+        isEyeDonor: formData.isEyeDonor,
+        bloodGroup: formData.isBloodDonor ? formData.bloodGroup : null,
+        fssaiNumber: formData.isFoodDonor ? formData.fssaiNumber : null,
+        trustName: formData.isFoodDonor ? formData.trustName : null,
+        foodFrequency: formData.isFoodDonor ? formData.foodFrequency : null,
+        foodType: formData.isFoodDonor ? formData.foodType : null,
+        eyeDonationConsent: formData.isEyeDonor ? formData.eyeDonationConsent : null,
+        familyInformed: formData.isEyeDonor ? formData.familyInformed : null,
+        doctorName: formData.isEyeDonor ? formData.doctorName : null,
+        doctorNumber: formData.isEyeDonor ? formData.doctorNumber : null,
+        state: formData.state,
+        district: formData.district,
+        faceVerified: true,
+        shareContact: formData.shareContact,
+        lastDonationDate: formData.isBloodDonor ? formattedLastDonationDate : null,
+        nextEligibleDate: formData.isBloodDonor ? nextEligibleDate : null
+      };
+
       if (isProfileCompletionMode) {
         const completedUser = await firebaseService.completeProfile({
-          uid: googleUser?.uid || profileUser?.uid,
-          name: formData.name,
-          contact: formData.contact,
-          email: formData.email,
-          bloodGroup: formData.bloodGroup,
-          state: formData.state,
-          district: formData.district,
-          faceVerified: true,
-          shareContact: formData.shareContact,
-          lastDonationDate: formattedLastDonationDate,
-          nextEligibleDate: nextEligibleDate
+          uid: pendingUser?.uid,
+          ...payloadData
         });
         updateUser(completedUser);
         sessionStorage.removeItem('pendingGoogleUser');
         sessionStorage.removeItem('pendingProfileUser');
       } else {
         await register({
-          name: formData.name,
-          contact: formData.contact,
-          email: formData.email,
-          bloodGroup: formData.bloodGroup,
-          state: formData.state,
-          district: formData.district,
-          faceVerified: true,
-          shareContact: formData.shareContact,
-          lastDonationDate: formattedLastDonationDate,
-          nextEligibleDate: nextEligibleDate,
+          ...payloadData,
           password: formData.password
         });
       }
@@ -449,25 +513,196 @@ const Register = () => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Blood Group</label>
-            <select name="bloodGroup" className="form-select" required value={formData.bloodGroup} onChange={handleChange}>
-              <option value="">Select Blood Group</option>
-              <option value="A+">A+</option>
-              <option value="A-">A-</option>
-              <option value="A1+">A1+</option>
-              <option value="B+">B+</option>
-              <option value="B-">B-</option>
-              <option value="O+">O+</option>
-              <option value="O-">O-</option>
-              <option value="AB+">AB+</option>
-              <option value="AB-">AB-</option>
-            </select>
+          <div className="form-group mb-6" style={{ padding: '1.5rem', background: 'rgba(30, 64, 175, 0.05)', borderRadius: '12px', border: '1px solid rgba(30, 64, 175, 0.1)' }}>
+            <label className="form-label mb-4" style={{ fontSize: '1.1rem', color: 'var(--primary-dark)' }}>I wish to be a (select at least one): <span style={{color: 'var(--error)'}}>*</span></label>
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center cursor-pointer" style={{ marginBottom: '0.5rem' }}>
+                <input type="checkbox" name="isBloodDonor" checked={formData.isBloodDonor} onChange={handleChange} style={{ width: '1.25rem', height: '1.25rem', accentColor: 'var(--error)', marginRight: '0.75rem' }} />
+                <span style={{ fontWeight: 500, color: 'var(--text)' }}>Blood Donor</span>
+              </label>
+              <label className="flex items-center cursor-pointer" style={{ marginBottom: '0.5rem' }}>
+                <input type="checkbox" name="isFoodDonor" checked={formData.isFoodDonor} onChange={handleChange} style={{ width: '1.25rem', height: '1.25rem', accentColor: 'var(--warning)', marginRight: '0.75rem' }} />
+                <span style={{ fontWeight: 500, color: 'var(--text)' }}>Food Donor</span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input type="checkbox" name="isEyeDonor" checked={formData.isEyeDonor} onChange={handleChange} style={{ width: '1.25rem', height: '1.25rem', accentColor: 'var(--success)', marginRight: '0.75rem' }} />
+                <span style={{ fontWeight: 500, color: 'var(--text)' }}>Eye Donor</span>
+              </label>
+              <div style={{ borderTop: '1px solid rgba(0,0,0,0.1)', margin: '0.5rem 0' }}></div>
+              <label className="flex items-center cursor-pointer">
+                <input type="checkbox" name="isRequestTrustee" checked={formData.isRequestTrustee} onChange={handleChange} style={{ width: '1.25rem', height: '1.25rem', accentColor: 'var(--primary)', marginRight: '0.75rem' }} />
+                <span style={{ fontWeight: 500, color: 'var(--text)' }}>Request Trustee <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 'normal' }}>(I only want to post requests, not donate)</span></span>
+              </label>
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          {formData.isBloodDonor && (
+            <div style={{ padding: '1.5rem', background: 'rgba(239, 68, 68, 0.03)', borderRadius: '12px', border: '1px dashed rgba(239, 68, 68, 0.3)', marginBottom: '1.5rem' }}>
+              <h4 style={{ color: 'var(--error)', marginBottom: '1rem' }}>Blood Donor Details</h4>
+              <div className="form-group">
+                <label className="form-label">Blood Group <span style={{color: 'var(--error)'}}>*</span></label>
+                <select name="bloodGroup" className="form-select" required={formData.isBloodDonor} value={formData.bloodGroup} onChange={handleChange}>
+                  <option value="">Select Blood Group</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="A1+">A1+</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                </select>
+              </div>
+
+              <div className="form-group mb-6 mt-4">
+                <label className="form-label" style={{ fontWeight: 600, color: 'var(--text)' }}>Have you donated blood previously?</label>
+                <div className="flex gap-4 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="hasDonatedBefore" value="yes" checked={formData.hasDonatedBefore === 'yes'} onChange={handleChange} style={{ accentColor: 'var(--primary)' }} />
+                    Yes
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="hasDonatedBefore" value="no" checked={formData.hasDonatedBefore === 'no'} onChange={handleChange} style={{ accentColor: 'var(--primary)' }} />
+                    No
+                  </label>
+                </div>
+              </div>
+
+              {formData.hasDonatedBefore === 'yes' && (
+                <div className="form-group mb-2" style={{ background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <label className="form-label">Last Donated Date <span style={{color: 'var(--error)'}}>*</span></label>
+                  <input type="date" name="lastDonationDate" className="form-input" max={new Date().toISOString().split('T')[0]} required={formData.hasDonatedBefore === 'yes'} value={formData.lastDonationDate} onChange={handleChange} />
+                  <p className="text-light mt-2" style={{ fontSize: '0.85rem', marginBottom: 0 }}>
+                    Note: You can always change the date of donation later in your profile page.
+                  </p>
+                </div>
+              )}
+
+              <div className="form-group mt-6" style={{ background: 'rgba(230, 57, 70, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(230, 57, 70, 0.1)' }}>
+                <label className="flex cursor-pointer" style={{ alignItems: 'flex-start' }}>
+                  <input
+                    type="checkbox"
+                    name="shareContact"
+                    checked={formData.shareContact}
+                    onChange={handleChange}
+                    style={{ marginTop: '0.2rem', marginRight: '1rem', width: '1.2rem', height: '1.2rem', accentColor: 'var(--primary)', flexShrink: 0 }}
+                  />
+                  <div style={{ lineHeight: '1.4' }}>
+                    <span style={{ fontWeight: 600, display: 'block', marginBottom: '0.25rem', color: 'var(--text)', fontSize: '1.05rem' }}>
+                      Publicly share my contact details
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', display: 'block' }}>
+                      Are you ready to share your number so patients can contact you anytime regarding blood donation? If yes, your name, contact, and location will be publicly visible on the home page.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {formData.isFoodDonor && (
+            <div style={{ padding: '1.5rem', background: 'rgba(245, 158, 11, 0.03)', borderRadius: '12px', border: '1px dashed rgba(245, 158, 11, 0.3)', marginBottom: '1.5rem' }}>
+              <h4 style={{ color: 'var(--warning)', marginBottom: '1rem' }}>Food Donor Details</h4>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="form-label">Type of Food Donated <span style={{color: 'var(--error)'}}>*</span></label>
+                  <select name="foodType" className="form-select" required={formData.isFoodDonor} value={formData.foodType} onChange={handleChange}>
+                    <option value="">Select Type</option>
+                    <option value="Cooked Meals">Cooked Meals (Ready to eat)</option>
+                    <option value="Raw Groceries">Raw Groceries / Rations</option>
+                    <option value="Both">Both Cooked and Raw</option>
+                    <option value="Packaged Foods">Packaged Foods / Snacks</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Donation Frequency <span style={{color: 'var(--error)'}}>*</span></label>
+                  <select name="foodFrequency" className="form-select" required={formData.isFoodDonor} value={formData.foodFrequency} onChange={handleChange}>
+                    <option value="">Select Frequency</option>
+                    <option value="Daily">Daily</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Occasionally">Occasionally / Festivals</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4 mt-4 mb-2">
+                <div className="form-group">
+                  <label className="form-label">Trust Name (Optional)</label>
+                  <input type="text" name="trustName" className="form-input" placeholder="e.g. Annadanam Trust" value={formData.trustName} onChange={handleChange} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">FSSAI Number (Optional)</label>
+                  <input type="text" name="fssaiNumber" className="form-input" placeholder="e.g. 12345678901234" value={formData.fssaiNumber} onChange={handleChange} />
+                  <p className="text-light mt-1" style={{ fontSize: '0.75rem' }}>Applicable if you are a restaurant or business.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {formData.isEyeDonor && (
+            <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.03)', borderRadius: '12px', border: '1px dashed rgba(16, 185, 129, 0.3)', marginBottom: '1.5rem' }}>
+              <h4 style={{ color: 'var(--success)', marginBottom: '1rem' }}>Eye Donor Details</h4>
+              
+              <div className="form-group mb-4" style={{ background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <label className="flex cursor-pointer" style={{ alignItems: 'flex-start' }}>
+                  <input
+                    type="checkbox"
+                    name="eyeDonationConsent"
+                    checked={formData.eyeDonationConsent}
+                    onChange={handleChange}
+                    required={formData.isEyeDonor}
+                    style={{ marginTop: '0.2rem', marginRight: '1rem', width: '1.2rem', height: '1.2rem', accentColor: 'var(--success)', flexShrink: 0 }}
+                  />
+                  <div style={{ lineHeight: '1.4' }}>
+                    <span style={{ fontWeight: 600, display: 'block', color: 'var(--text)' }}>
+                      I concern to donate my eyes <span style={{color: 'var(--error)'}}>*</span>
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', display: 'block', marginTop: '0.25rem' }}>
+                      By checking this, I willingly pledge to donate my eyes after my lifetime to help others see.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="form-group mb-6" style={{ background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <label className="flex cursor-pointer" style={{ alignItems: 'flex-start' }}>
+                  <input
+                    type="checkbox"
+                    name="familyInformed"
+                    checked={formData.familyInformed}
+                    onChange={handleChange}
+                    required={formData.isEyeDonor}
+                    style={{ marginTop: '0.2rem', marginRight: '1rem', width: '1.2rem', height: '1.2rem', accentColor: 'var(--success)', flexShrink: 0 }}
+                  />
+                  <div style={{ lineHeight: '1.4' }}>
+                    <span style={{ fontWeight: 600, display: 'block', color: 'var(--text)' }}>
+                      I have informed my family about this pledge <span style={{color: 'var(--error)'}}>*</span>
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', display: 'block', marginTop: '0.25rem' }}>
+                      Your family must be aware of your decision, as they will need to contact the eye bank within 6 hours of death.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="form-group mb-2">
+                  <label className="form-label">Doctor's Name <span style={{color: 'var(--error)'}}>*</span></label>
+                  <input type="text" name="doctorName" className="form-input" required={formData.isEyeDonor} placeholder="e.g. Dr. Smith" value={formData.doctorName} onChange={handleChange} />
+                </div>
+                <div className="form-group mb-2">
+                  <label className="form-label">Doctor's Number <span style={{color: 'var(--error)'}}>*</span></label>
+                  <input type="tel" name="doctorNumber" className="form-input" required={formData.isEyeDonor} placeholder="Doctor's contact" value={formData.doctorNumber} onChange={handleChange} />
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          <div className="grid md:grid-cols-2 gap-4 mt-6">
             <div className="form-group">
-              <label className="form-label">State</label>
+              <label className="form-label">State <span style={{color: 'var(--error)'}}>*</span></label>
               <select name="state" className="form-select" required value={formData.state} onChange={handleStateChange}>
                 <option value="">Select State</option>
                 {Object.keys(SOUTH_INDIAN_STATES).map(state => (
@@ -477,7 +712,7 @@ const Register = () => {
             </div>
             
             <div className="form-group">
-              <label className="form-label">District</label>
+              <label className="form-label">District <span style={{color: 'var(--error)'}}>*</span></label>
               <select name="district" className="form-select" required value={formData.district} onChange={handleChange} disabled={!formData.state}>
                 <option value="">Select District</option>
                 {formData.state && SOUTH_INDIAN_STATES[formData.state].map(district => (
@@ -485,50 +720,6 @@ const Register = () => {
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="form-group mb-6">
-            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text)' }}>Have you donated blood previously?</label>
-            <div className="flex gap-4 mt-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="hasDonatedBefore" value="yes" checked={formData.hasDonatedBefore === 'yes'} onChange={handleChange} style={{ accentColor: 'var(--primary)' }} />
-                Yes
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="hasDonatedBefore" value="no" checked={formData.hasDonatedBefore === 'no'} onChange={handleChange} style={{ accentColor: 'var(--primary)' }} />
-                No
-              </label>
-            </div>
-          </div>
-
-          {formData.hasDonatedBefore === 'yes' && (
-            <div className="form-group mb-6" style={{ background: 'rgba(29, 53, 87, 0.05)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(29, 53, 87, 0.1)' }}>
-              <label className="form-label">Last Donated Date <span style={{color: 'var(--error)'}}>*</span></label>
-              <input type="date" name="lastDonationDate" className="form-input" max={new Date().toISOString().split('T')[0]} required={formData.hasDonatedBefore === 'yes'} value={formData.lastDonationDate} onChange={handleChange} />
-              <p className="text-light mt-2" style={{ fontSize: '0.85rem', marginBottom: 0 }}>
-                Note: You can always change the date of donation later in your profile page.
-              </p>
-            </div>
-          )}
-
-          <div className="form-group mb-6" style={{ background: 'rgba(230, 57, 70, 0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(230, 57, 70, 0.1)' }}>
-            <label className="flex cursor-pointer" style={{ alignItems: 'flex-start' }}>
-              <input
-                type="checkbox"
-                name="shareContact"
-                checked={formData.shareContact}
-                onChange={handleChange}
-                style={{ marginTop: '0.2rem', marginRight: '1rem', width: '1.2rem', height: '1.2rem', accentColor: 'var(--primary)', flexShrink: 0 }}
-              />
-              <div style={{ lineHeight: '1.4' }}>
-                <span style={{ fontWeight: 600, display: 'block', marginBottom: '0.25rem', color: 'var(--text)', fontSize: '1.05rem' }}>
-                  Publicly share my contact details
-                </span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', display: 'block' }}>
-                  Are you ready to share your number so patients can contact you anytime regarding blood donation? If yes, your name, contact, and location will be publicly visible on the home page.
-                </span>
-              </div>
-            </label>
           </div>
 
           <div className="form-group">
@@ -720,8 +911,6 @@ const Register = () => {
                     const userData = await loginWithGoogle();
                     if (userData?.needsRegistration) {
                       toast('Please complete your profile details to finish registration', { icon: 'ℹ️', duration: 5000 });
-                      sessionStorage.setItem('pendingGoogleUser', JSON.stringify(userData));
-                      navigate('/register');
                     } else {
                       navigate('/requests');
                     }

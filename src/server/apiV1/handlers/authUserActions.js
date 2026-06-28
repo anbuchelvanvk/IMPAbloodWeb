@@ -19,6 +19,11 @@ export async function handleAuthUserAction(action, ctx) {
       .map((v) => v.trim().toLowerCase())
       .filter(Boolean);
     const shouldBootstrapAdmin = user.email && bootstrapAdmins.includes(user.email.toLowerCase());
+    const generateId = (prefix) => `${prefix}-${Math.floor(10000 + Math.random() * 90000)}`;
+    if (data.isBloodDonor && !data.bloodDonorId) data.bloodDonorId = generateId('BLD');
+    if (data.isFoodDonor && !data.foodDonorId) data.foodDonorId = generateId('FD');
+    if (data.isEyeDonor && !data.eyeDonorId) data.eyeDonorId = generateId('EYD');
+
     const doc = {
       ...data,
       email: user.email,
@@ -88,9 +93,24 @@ export async function handleAuthUserAction(action, ctx) {
     const updates = schemas.updateProfile.parse(payload);
     delete updates.isAdmin;
     delete updates.role;
-    await db.collection('users').doc(user.uid).set(updates, { merge: true });
+    
     const snap = await db.collection('users').doc(user.uid).get();
-    return respondOk({ id: snap.id, ...snap.data(), isAdmin: user.claims?.admin === true });
+    const existing = snap.exists ? snap.data() : {};
+    
+    const generateId = (prefix) => `${prefix}-${Math.floor(10000 + Math.random() * 90000)}`;
+    if (updates.isBloodDonor || existing.isBloodDonor) {
+      if (!existing.bloodDonorId) updates.bloodDonorId = generateId('BLD');
+    }
+    if (updates.isFoodDonor || existing.isFoodDonor) {
+      if (!existing.foodDonorId) updates.foodDonorId = generateId('FD');
+    }
+    if (updates.isEyeDonor || existing.isEyeDonor) {
+      if (!existing.eyeDonorId) updates.eyeDonorId = generateId('EYD');
+    }
+
+    await db.collection('users').doc(user.uid).set(updates, { merge: true });
+    const updatedSnap = await db.collection('users').doc(user.uid).get();
+    return respondOk({ id: updatedSnap.id, ...updatedSnap.data(), isAdmin: user.claims?.admin === true });
   }
 
   if (action === 'getPublicDonors') {

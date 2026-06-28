@@ -12,10 +12,11 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
   useEffect(() => {
     if (loading) return;
     if (!user) router.replace('/login');
-    if (adminOnly && user && !isAdmin) router.replace('/');
+    else if (user.needsRegistration) router.replace('/register');
+    else if (adminOnly && !isAdmin) router.replace('/');
   }, [loading, user, adminOnly, router, isAdmin]);
 
-  if (loading || !user || (adminOnly && !isAdmin)) {
+  if (loading || !user || user.needsRegistration || (adminOnly && !isAdmin)) {
     return (
       <div className="container text-center" style={{ padding: '4rem 0' }}>
         <div className="card" style={{ maxWidth: '420px', margin: '0 auto' }}>
