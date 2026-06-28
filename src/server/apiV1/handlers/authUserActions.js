@@ -147,6 +147,17 @@ export async function handleAuthUserAction(action, ctx) {
     return respondOk(true);
   }
 
+  if (action === 'promoteToAdmin') {
+    requireAuth(user); ctx.requireAdmin(user);
+    const { userId } = schemas.promoteUser.parse(payload);
+    await getAdminAuth().setCustomUserClaims(userId, { admin: true });
+    await db.collection('users').doc(userId).update({
+      role: 'admin',
+      isAdmin: true
+    });
+    return respondOk(true);
+  }
+
   if (action === 'deleteDocument') {
     requireAuth(user); ctx.requireAdmin(user);
     const data = schemas.deleteDocument.parse(payload);

@@ -33,6 +33,8 @@ const Register = () => {
     name: seedUser?.name || '',
     contact: seedUser?.contact || '',
     email: seedUser?.email || '',
+    dob: seedUser?.dob || '',
+    age: seedUser?.age || '',
     isBloodDonor: seedUser?.isBloodDonor || false,
     isFoodDonor: seedUser?.isFoodDonor || false,
     isEyeDonor: seedUser?.isEyeDonor || false,
@@ -113,6 +115,8 @@ const Register = () => {
       name: seedUser.name || prev.name,
       contact: seedUser.contact || prev.contact,
       email: seedUser.email || prev.email,
+      dob: seedUser.dob || prev.dob,
+      age: seedUser.age || prev.age,
       isBloodDonor: seedUser.isBloodDonor ?? prev.isBloodDonor,
       isFoodDonor: seedUser.isFoodDonor ?? prev.isFoodDonor,
       isEyeDonor: seedUser.isEyeDonor ?? prev.isEyeDonor,
@@ -157,6 +161,8 @@ const Register = () => {
           name: latest.name || prev.name,
           contact: latest.contact || prev.contact,
           email: latest.email || prev.email,
+          dob: latest.dob || prev.dob,
+          age: latest.age || prev.age,
           isBloodDonor: latest.isBloodDonor ?? prev.isBloodDonor,
           isFoodDonor: latest.isFoodDonor ?? prev.isFoodDonor,
           isEyeDonor: latest.isEyeDonor ?? prev.isEyeDonor,
@@ -302,7 +308,24 @@ const Register = () => {
         setFormData(prev => ({ ...prev, [name]: checked }));
       }
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData(prev => {
+        const next = { ...prev, [name]: value };
+        if (name === 'dob') {
+          if (value) {
+            const today = new Date();
+            const birthDate = new Date(value);
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+            }
+            next.age = age.toString();
+          } else {
+            next.age = '';
+          }
+        }
+        return next;
+      });
     }
   };
 
@@ -426,6 +449,8 @@ const Register = () => {
         name: formData.name,
         contact: formData.contact,
         email: formData.email,
+        dob: formData.dob || null,
+        age: formData.age ? parseInt(formData.age, 10) : null,
         isBloodDonor: formData.isBloodDonor,
         isFoodDonor: formData.isFoodDonor,
         isEyeDonor: formData.isEyeDonor,
@@ -512,6 +537,23 @@ const Register = () => {
               <input type="tel" name="contact" className="form-input" required value={formData.contact} onChange={handleChange} />
             </div>
           </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="form-group">
+              <label className="form-label">Date of Birth <span style={{color: 'var(--error)'}}>*</span></label>
+              <input type="date" name="dob" className="form-input" max={new Date().toISOString().split('T')[0]} required value={formData.dob} onChange={handleChange} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Age</label>
+              <input type="number" name="age" className="form-input" required readOnly value={formData.age} placeholder="Auto-calculated" style={{ background: '#f5f5f5', cursor: 'not-allowed' }} />
+            </div>
+          </div>
+          
+          {formData.age !== '' && parseInt(formData.age, 10) < 18 && (
+            <div className="mb-6 p-3" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--error)', borderRadius: '8px', border: '1px solid var(--error)' }}>
+              <strong>Registration Not Allowed:</strong> You must be at least 18 years old to register.
+            </div>
+          )}
 
           <div className="form-group mb-6" style={{ padding: '1.5rem', background: 'rgba(30, 64, 175, 0.05)', borderRadius: '12px', border: '1px solid rgba(30, 64, 175, 0.1)' }}>
             <label className="form-label mb-4" style={{ fontSize: '1.1rem', color: 'var(--primary-dark)' }}>I wish to be a (select at least one): <span style={{color: 'var(--error)'}}>*</span></label>
@@ -893,7 +935,7 @@ const Register = () => {
             </div>
           )}
 
-          <button type="submit" className="btn btn-primary w-full mt-8" disabled={loading}>
+          <button type="submit" className="btn btn-primary w-full mt-8" disabled={loading || (formData.age !== '' && parseInt(formData.age, 10) < 18)}>
             {loading ? (isCompletionUi ? 'Completing Profile...' : 'Registering...') : (isCompletionUi ? 'Complete Registration' : 'Register Account')}
           </button>
 

@@ -83,7 +83,7 @@ function legacyReadBlocked(action) {
 }
 
 const ACTION_SET = new Set([
-  'register', 'checkDuplicateUser', 'getCurrentUser', 'updateMyProfile', 'getPublicDonors', 'getPublicDonorsPaged', 'deleteUser', 'deleteDocument',
+  'register', 'checkDuplicateUser', 'getCurrentUser', 'updateMyProfile', 'getPublicDonors', 'getPublicDonorsPaged', 'deleteUser', 'deleteDocument', 'promoteToAdmin',
   'createRequest', 'getAllRequests', 'getPublicRequests', 'getPublicRequestsPaged', 'getPublicRequestById', 'verifyRequest', 'updateRequestStatus',
   'createChatSession', 'getActiveChatsCount', 'getActiveChatsCountFast', 'sendMessage', 'listMyChats', 'listMyChatsPaged', 'listChatMessages', 'verifyOTPAndFulfill', 'cancelChat', 'endChatSession',
   'createFoodDonation', 'createFoodRequest', 'getAllFoodDonations', 'getFoodDonationsPaged', 'getAllFoodRequests', 'getFoodRequestsPaged',

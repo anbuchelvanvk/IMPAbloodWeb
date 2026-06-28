@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebaseService';
-import { Trash2, Eye, Download, Users, Utensils, HeartHandshake, Droplet, Search } from 'lucide-react';
+import { Trash2, Eye, Download, Users, Utensils, HeartHandshake, Droplet, Search, Shield } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -104,6 +104,20 @@ const AdminDashboard = () => {
       } catch (err) {
         console.error("Failed to delete user", err);
         alert("Failed to delete user. Check console for details.");
+      }
+    }
+  };
+
+  const handlePromoteAdmin = async (id) => {
+    if (window.confirm("Are you sure you want to promote this user to Admin? They will have full access to this dashboard.")) {
+      try {
+        await firebaseService.promoteToAdmin(id);
+        firebaseService.invalidateAfterMutation();
+        setUsers(users.map(u => u.id === id ? { ...u, isAdmin: true, role: 'admin' } : u));
+        alert("Successfully promoted user to Admin.");
+      } catch (err) {
+        console.error("Failed to promote user", err);
+        alert("Failed to promote user to Admin. Check console for details.");
       }
     }
   };
@@ -227,6 +241,18 @@ const AdminDashboard = () => {
       RequestedAt: new Date(r.createdAt).toLocaleDateString()
     }));
 
+    // 6. Eye Pledges Sheet
+    const eyePledgesData = users.filter(u => u.isEyeDonor).map(u => ({
+      Name: u.name,
+      Contact: u.contact,
+      Age: u.age || 'N/A',
+      Location: `${u.district}, ${u.state}`,
+      GuardianName: u.guardianName || 'N/A',
+      GuardianContact: u.guardianContact || 'N/A',
+      DoctorName: u.doctorName || 'N/A',
+      DoctorNumber: u.doctorNumber || 'N/A',
+      PledgedAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'
+    }));
 
 
     triggerDownload('users.csv', toCsv(usersData));
@@ -234,6 +260,7 @@ const AdminDashboard = () => {
     triggerDownload('donation_history.csv', toCsv(donationHistoryData));
     triggerDownload('food_donations.csv', toCsv(foodDonationsData));
     triggerDownload('food_requests.csv', toCsv(foodRequestsData));
+    triggerDownload('eye_pledges.csv', toCsv(eyePledgesData));
   };
 
   const handleBulkDeleteHackers = async () => {
@@ -343,6 +370,9 @@ const AdminDashboard = () => {
         </button>
         <button className={`btn ${activeTab === 'foodRequests' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('foodRequests')}>
           <HeartHandshake size={18} /> Food Requests
+        </button>
+        <button className={`btn ${activeTab === 'eyePledges' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('eyePledges')}>
+          <Eye size={18} /> Eye Pledges
         </button>
       </div>
 
@@ -535,17 +565,27 @@ const AdminDashboard = () => {
                   <td style={{ padding: '1rem' }}>
                     <div className="flex gap-2">
                       <button 
-                        className="btn btn-outline" 
-                        style={{ padding: '0.5rem', border: 'none', color: 'var(--success)' }}
+                        className="btn btn-success-outline" 
+                        style={{ padding: '0.5rem', border: 'none' }}
                         onClick={() => handleSelectUser(u)}
                         title="View Details"
                       >
                         <Eye size={18} />
                       </button>
-                      {u.id !== user?.id && (
+                      {!u.isAdmin && (
                         <button 
                           className="btn btn-outline" 
-                          style={{ padding: '0.5rem', border: 'none', color: 'var(--error)' }}
+                          style={{ padding: '0.5rem', border: 'none' }}
+                          onClick={() => handlePromoteAdmin(u.id)}
+                          title="Promote to Admin"
+                        >
+                          <Shield size={18} />
+                        </button>
+                      )}
+                      {u.id !== user?.id && (
+                        <button 
+                          className="btn btn-error-outline" 
+                          style={{ padding: '0.5rem', border: 'none' }}
                           onClick={() => handleDeleteUser(u.id)}
                           title="Delete User"
                         >
@@ -598,7 +638,7 @@ const AdminDashboard = () => {
                   <td style={{ padding: '1rem' }}>{d.district}, {d.state}</td>
                   <td style={{ padding: '1rem' }}><span className="badge badge-secondary">{d.quantity} pax</span></td>
                   <td style={{ padding: '1rem' }}>
-                    <button className="btn btn-outline" style={{ padding: '0.5rem', border: 'none', color: 'var(--error)' }} onClick={() => handleDeleteFoodItem('foodDonations', d.id)}>
+                    <button className="btn btn-error-outline" style={{ padding: '0.5rem', border: 'none' }} onClick={() => handleDeleteFoodItem('foodDonations', d.id)}>
                       <Trash2 size={18} />
                     </button>
                   </td>
@@ -631,13 +671,51 @@ const AdminDashboard = () => {
                   <td style={{ padding: '1rem' }}>{r.district}, {r.state}</td>
                   <td style={{ padding: '1rem' }}><span className="badge badge-primary">{r.peopleCount} people</span></td>
                   <td style={{ padding: '1rem' }}>
-                    <button className="btn btn-outline" style={{ padding: '0.5rem', border: 'none', color: 'var(--error)' }} onClick={() => handleDeleteFoodItem('foodRequests', r.id)}>
+                    <button className="btn btn-error-outline" style={{ padding: '0.5rem', border: 'none' }} onClick={() => handleDeleteFoodItem('foodRequests', r.id)}>
                       <Trash2 size={18} />
                     </button>
                   </td>
                 </tr>
               ))}
               {foodRequests.length === 0 && <tr><td colSpan="4" className="text-center p-4">No food requests found.</td></tr>}
+            </tbody>
+          </table>
+        )}
+
+        {activeTab === 'eyePledges' && (
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                <th style={{ padding: '1rem' }}>Donor</th>
+                <th style={{ padding: '1rem' }}>Location</th>
+                <th style={{ padding: '1rem' }}>Guardian Details</th>
+                <th style={{ padding: '1rem' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.filter(u => u.isEyeDonor).map(u => (
+                <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '1rem', fontWeight: 500 }}>
+                    {u.name} <br/>
+                    <small className="text-light">{u.contact} | Age: {u.age || 'N/A'}</small>
+                  </td>
+                  <td style={{ padding: '1rem' }}>{u.district}, {u.state}</td>
+                  <td style={{ padding: '1rem' }}>
+                    {u.guardianName ? (
+                      <>
+                        {u.guardianName} <br/>
+                        <small className="text-light">{u.guardianContact}</small>
+                      </>
+                    ) : 'N/A'}
+                  </td>
+                  <td style={{ padding: '1rem' }}>
+                    <button className="btn btn-success-outline" style={{ padding: '0.5rem', border: 'none' }} onClick={() => handleSelectUser(u)}>
+                      <Eye size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {users.filter(u => u.isEyeDonor).length === 0 && <tr><td colSpan="4" className="text-center p-4">No eye pledges found.</td></tr>}
             </tbody>
           </table>
         )}

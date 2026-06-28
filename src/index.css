@@ -132,6 +132,17 @@ h1, h2, h3, h4, h5, h6 {
   color: white;
 }
 
+.btn-error-outline {
+  background: transparent;
+  color: var(--error);
+  border: 2px solid var(--error);
+}
+
+.btn-error-outline:hover {
+  background: var(--error);
+  color: white;
+}
+
 .btn-secondary {
   background: var(--secondary);
   color: white;
